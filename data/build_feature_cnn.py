@@ -1,7 +1,7 @@
 import numpy as np
 import jieba as jb
 import sys
-
+import random as rd
 
 def ans():
     cate_dic={}
@@ -30,6 +30,7 @@ def build(filename):
     cate=[]
     cate_dic={}
     word_dic={}
+
     for idx,line in  enumerate(open('querys_dic','r',encoding='utf-8').readlines()):
         if idx==0:
             line=line.rstrip().rstrip('|-|').split('|-|')
@@ -42,7 +43,25 @@ def build(filename):
                 each=each.split('&:')
                 word_dic[each[0]]=int(each[1])
 
-    for line in open(filename,'r',encoding='utf-8').readlines():
+    querys=open(filename,'r',encoding='utf-8').readlines()
+    for i in range(len(querys)):
+        idx1=rd.randint(0,len(querys)-1)
+        idx2=rd.randint(0,len(querys)-2)
+        tmp=querys[idx1]
+        querys[idx1]=querys[idx2]
+        querys[idx2]=tmp
+    n=0
+    for Idx,line in enumerate(querys):
+        if Idx%5000==0 and Idx!=0:
+            cate = np.array(cate)
+            feature=np.array(feature)
+            print(cate.shape)
+            print(feature.shape)
+            np.save('./data/'+filename + '_cate_'+str(n), cate)
+            np.save('./data/'+filename+'_feature_'+str(n),feature)
+            feature=[]
+            cate=[]
+            n+=1
         query,cate_s=line.strip().split('\t')
         tmp=np.zeros((12,len(word_dic)))
         for idx,word in enumerate(jb.cut(query)):
@@ -54,12 +73,13 @@ def build(filename):
         cate_tmp[cate_dic[cate_s]]=1
         cate.append(cate_tmp)
 
+    cate = np.array(cate)
     feature=np.array(feature)
-    cate=np.array(cate)
-    print(feature.shape)
     print(cate.shape)
-    np.save(filename+'_feature',feature)
-    np.save(filename+'_cate',cate)
+    print(feature.shape)
+    np.save('./data/'+filename + '_cate_'+str(n), cate)
+    np.save('./data/'+filename+'_feature_'+str(n),feature)
+
 
 
 if __name__=='__main__':

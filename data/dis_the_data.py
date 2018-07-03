@@ -19,7 +19,7 @@ outfile_train=open('querys_train','w',encoding='utf-8')
 outfile_test=open('querys_test','w',encoding='utf-8')
 #outfile_test.write('Descript,Category'+'\n')
 
-max_len=2*max([len(querys_by_cate[key]) for key in querys_by_cate])
+max_len=max([len(querys_by_cate[key]) for key in querys_by_cate])
 print(max_len)
 for key in querys_by_cate:
     num=0
