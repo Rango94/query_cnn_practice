@@ -55,6 +55,7 @@ def train(dh):
 def main(argv=None):
     dh=data_helper()
     train(dh)
+    #1
 
 tf.app.run()
 
