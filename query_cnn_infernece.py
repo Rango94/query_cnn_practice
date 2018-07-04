@@ -1,10 +1,10 @@
 import tensorflow as tf
 
-
 NUM_CHANNELS=1
 
 
-IMAGE_SIZE=28
+FEATURE_SHAPE=[12,3665]
+
 CONV1_DEEP=32
 CONV1_SIZE=5
 
@@ -14,12 +14,20 @@ CONV2_SIZE=5
 FC_SIZ=512
 NUM_LABELS=10
 
+WORD_LEN=200
+
+
 
 def inference(input_tensor,train,regularizer):
+    with tf.variable_scope('layer0-embedding'):
+        embedding_weights=tf.get_variable('weight',[FEATURE_SHAPE[1],WORD_LEN],initializer=tf.truncated_normal_initializer(stddev=0.1))
+        embedding_baises=tf.get_variable('bais',[FEATURE_SHAPE[0],WORD_LEN],initializer=tf.constant_initializer(0.0))
+        embedding=tf.matmul(input_tensor,embedding_weights)+embedding_baises
+
     with tf.variable_scope('layer1-conv1'):
         conv1_weights=tf.get_variable('wegiht',[CONV1_SIZE,CONV1_SIZE,NUM_CHANNELS,CONV1_DEEP],initializer=tf.truncated_normal_initializer(stddev=0.1))
         conv1_biases=tf.get_variable('bais',[CONV1_DEEP],initializer=tf.constant_initializer(0.0))
-        conv1=tf.nn.conv2d(input_tensor,conv1_weights,strides=[1,1,1,1],padding='SAME')
+        conv1=tf.nn.conv2d(embedding,conv1_weights,strides=[1,1,1,1],padding='SAME')
         relu1=tf.nn.relu(tf.nn.bias_add(conv1,conv1_biases))
 
     with tf.name_scope('layer2-pool1'):
