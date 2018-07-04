@@ -12,7 +12,7 @@ CONV2_DEEP=64
 CONV2_SIZE=5
 
 FC_SIZ=512
-NUM_LABELS=10
+NUM_LABELS=21
 
 WORD_LEN=200
 
@@ -20,9 +20,11 @@ WORD_LEN=200
 
 def inference(input_tensor,train,regularizer):
     with tf.variable_scope('layer0-embedding'):
-        embedding_weights=tf.get_variable('weight',[FEATURE_SHAPE[1],WORD_LEN],initializer=tf.truncated_normal_initializer(stddev=0.1))
-        embedding_baises=tf.get_variable('bais',[FEATURE_SHAPE[0],WORD_LEN],initializer=tf.constant_initializer(0.0))
+        input_tensor=tf.reshape(input_tensor,[-1,FEATURE_SHAPE[1]])
+        embedding_weights=tf.get_variable('weight',[FEATURE_SHAPE[1],WORD_LEN],initializer=tf.random_uniform_initializer(maxval=0.5/WORD_LEN,minval=-0.5/WORD_LEN))
+        embedding_baises=tf.get_variable('bais',[WORD_LEN],initializer=tf.constant_initializer(0.0))
         embedding=tf.matmul(input_tensor,embedding_weights)+embedding_baises
+        embedding = tf.reshape(embedding, [-1,12,WORD_LEN,NUM_CHANNELS])
 
     with tf.variable_scope('layer1-conv1'):
         conv1_weights=tf.get_variable('wegiht',[CONV1_SIZE,CONV1_SIZE,NUM_CHANNELS,CONV1_DEEP],initializer=tf.truncated_normal_initializer(stddev=0.1))
@@ -33,9 +35,8 @@ def inference(input_tensor,train,regularizer):
     with tf.name_scope('layer2-pool1'):
         pool1=tf.nn.max_pool(relu1,ksize=[1,2,2,1],strides=[1,2,2,1],padding='SAME')
 
-
     with tf.variable_scope('layer3-conv2'):
-        conv2_weights=tf.get_variable('weight',[CONV2_SIZE,CONV2_SIZE,NUM_CHANNELS,CONV2_DEEP],initializer=tf.truncated_normal_initializer(stddev=0.1))
+        conv2_weights=tf.get_variable('weight',[CONV2_SIZE,CONV2_SIZE,CONV1_DEEP,CONV2_DEEP],initializer=tf.truncated_normal_initializer(stddev=0.1))
         conv2_biases=tf.get_variable('bias',[CONV2_DEEP],initializer=tf.truncated_normal_initializer(0.0))
         conv2=tf.nn.conv2d(pool1,conv2_weights,strides=[1,1,1,1],padding='SAME')
         relu2=tf.nn.relu(tf.nn.bias_add(conv2,conv2_biases))
@@ -45,12 +46,12 @@ def inference(input_tensor,train,regularizer):
 
 
     pool_shape=pool2.get_shape().as_list()
+    # print(pool_shape[0])
     nodes=pool_shape[1]*pool_shape[2]*pool_shape[3]
+    reshaped=tf.reshape(pool2,[-1,nodes])
 
-    reshaped=tf.reshape(pool2,[pool_shape[0],nodes])
-
-    with tf.variable_scope('layer5,fc1'):
-        fc1_weights=tf.get_variable('weight',[nodes,FC_SIZ],initializer=tf.truncated_normal_initializer(stddev=0.1))
+    with tf.variable_scope('layer5-fc1'):
+        fc1_weights=tf.get_variable('weight',[nodes,FC_SIZ],initializer=tf.random_uniform_initializer(maxval=0.5/WORD_LEN,minval=-0.5/WORD_LEN))
 
         if regularizer!=None:
             tf.add_to_collection('losses',regularizer(fc1_weights))
@@ -58,8 +59,8 @@ def inference(input_tensor,train,regularizer):
         fc1=tf.nn.relu(tf.matmul(reshaped,fc1_weights)+fc1_biases)
         if train:fc1=tf.nn.dropout(fc1,0.5)
 
-    with tf.variable_scope('layer6,fc2'):
-        fc2_weights=tf.get_variable('weight',[FC_SIZ,NUM_LABELS],initializer=tf.truncated_normal_initializer(stddev=0.1))
+    with tf.variable_scope('layer6-fc2'):
+        fc2_weights=tf.get_variable('weight',[FC_SIZ,NUM_LABELS],initializer=tf.random_uniform_initializer(maxval=0.5/WORD_LEN,minval=-0.5/WORD_LEN))
         if regularizer!=None:
             tf.add_to_collection('losses',regularizer(fc2_weights))
         fc2_biases=tf.get_variable('bias',[NUM_LABELS],initializer=tf.constant_initializer(0.1))
