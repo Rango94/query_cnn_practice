@@ -1,7 +1,8 @@
 import os
 import query_cnn_infernece
 import tensorflow as tf
-from tensorflow.examples.tutorials.mnist import input_data
+from data_helper import data_helper
+
 
 MOVING_AVERAGE_DECAY=0.99
 
